@@ -4,9 +4,6 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using NUnit.Framework.Internal;
-using NUnit.Framework;
 
 namespace KonturCodeRetreat
 {
@@ -14,7 +11,7 @@ namespace KonturCodeRetreat
     {
         public HashSet<Point> AliveCells { get; private set; }
 
-        public Field(HashSet<Point> initialCells)
+        public Field(IEnumerable<Point> initialCells)
         {
             AliveCells = new HashSet<Point>(initialCells);
         }
@@ -32,98 +29,104 @@ namespace KonturCodeRetreat
 
         public IEnumerable<Point> GetNeighbours(Point position)
         {
-            var dxs = new int[] {-1, 0, 1};
-            var dys = new int[] {-1, 0, 1};
+            var dxs = new[] {-1, 0, 1};
+            var dys = new[] {-1, 0, 1};
             return dxs.SelectMany(dx => dys, (dx, dy) => new Point(position.X + dx, position.Y + dy))
                 .Where(p=>!p.Equals(position));
         }
 
     }
-    [TestFixture]
-    class Tests
-    {
-        private void AssertSetsAreEqual(HashSet<Point> one, HashSet<Point> other)
-        {
-            Assert.AreEqual(one.OrderBy(x => x.X).ThenBy(x => x.Y),
-                other.OrderBy(x => x.X).ThenBy(x => x.Y));
-        }
-        [Test]
-        public void squareStillSquare()
-        {
-            var cells = new HashSet<Point>
-            {
-                new Point(0, 0),
-                new Point(0, 1),
-                new Point(1, 0),
-                new Point(1, 1)
-            };
 
-            var field = new Field(cells);
-            field.Tick();
-            AssertSetsAreEqual(cells, field.AliveCells);
-        }
-
-        [Test]
-        public void stick()
-        {
-            var cells = new HashSet<Point>
-            {
-                new Point(0, 0),
-                new Point(0, 1),
-                new Point(0, 2)
-            };
-
-            var newCells = new HashSet<Point>
-            {
-                new Point(-1, 1),
-                new Point(0, 1),
-                new Point(1, 1)
-            };
-            var field = new Field(cells);
-            field.Tick();
-            AssertSetsAreEqual(newCells, field.AliveCells);
-        }
-    }
     class Program
     {
         static void Main(string[] args)
         {
-            var cells = new HashSet<Point>
+            var glidersFactory = new HashSet<Point>
             {
-                new Point(0, 0),
-                new Point(2, 0),
-                new Point(2, 1),
-                new Point(1, 1),
-                new Point(1, 2),
+                new Point(5, 1),
+                new Point(6, 1),
+                new Point(5, 2),
+                new Point(6, 2),
+                new Point(5, 11),
+                new Point(6, 11),
+                new Point(7, 11),
+                new Point(4, 12),
+                new Point(8, 12),
+                new Point(3, 13),
+                new Point(9, 13),
+                new Point(3, 14),
+                new Point(9, 14),
+                new Point(6, 15),
+                new Point(4, 16),
+                new Point(8, 16),
+                new Point(5, 17),
+                new Point(6, 17),
+                new Point(7, 17),
+                new Point(6, 18),
+                new Point(3, 21),
+                new Point(4, 21),
+                new Point(5, 21),
+                new Point(3, 22),
+                new Point(4, 22),
+                new Point(5, 22),
+                new Point(2, 23),
+                new Point(6, 23),
+                new Point(1, 25),
+                new Point(2, 25),
+                new Point(6, 25),
+                new Point(7, 25),
+                new Point(4, 35),
+                new Point(5, 35),
+                new Point(4, 36),
+                new Point(5, 36)
             };
-
-            var field = new Field(cells);
+            var field = new Field(glidersFactory);
+            Console.CursorVisible = false;
             while (true)
             {
                 Visualize(field);
                 field.Tick();
-                Thread.Sleep(1000);
+                Thread.Sleep(100);
             }
 
         }
 
+        private static int StartX;
+        private static int StartY;
+
         static void Visualize(Field field)
         {
-            Console.Clear();
-            var minX = field.AliveCells.Min(p => p.X);
-            var minY = field.AliveCells.Min(p => p.Y);
-
-            var maxX = field.AliveCells.Max(p => p.X);
-            var maxY = field.AliveCells.Max(p => p.Y);
-
-            for (int i = minX; i <= maxX; i++)
+            if (Console.KeyAvailable)
             {
-                for (int j = minY; j <= maxY; j++)
+                var key = Console.ReadKey(true);
+                switch (key.Key)
                 {
-                    Console.Write(field.AliveCells.Contains(new Point(i, j)) ? '+' : ' ');
+                    case ConsoleKey.LeftArrow:
+                        StartY--;
+                        break;
+                    case ConsoleKey.RightArrow:
+                        StartY++;
+                        break;
+                    case ConsoleKey.UpArrow:
+                        StartX--;
+                        break;
+                    case ConsoleKey.DownArrow:
+                        StartX++;
+                        break;
                 }
-                Console.WriteLine();
             }
+
+            var sb = new StringBuilder();
+            for (int i = StartX; i < StartX + Console.WindowHeight - 1; i++)
+            {
+                for (int j = StartY; j < StartY + Console.WindowWidth - 1; j++)
+                {
+                    sb.Append(field.AliveCells.Contains(new Point(i, j)) ? '+' : ' ');
+                }
+                sb.AppendLine();
+            }
+            Console.Clear();
+            Console.Write(sb.ToString());
 
         }
     }
